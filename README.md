@@ -1,31 +1,25 @@
-git add . && git commit -m "update" && git push![Header](https://capsule-render.vercel.app/api?type=waving&color=00ADD8&height=180&section=header&text=Ricardo%20Moran&fontSize=40&fontColor=ffffff&animation=fadeIn&fontAlignY=35&desc=Go%20Developer%20|%20Security%20First&descAlignY=55)
+# Ricardo Moran — Go Developer | Security First | Dependabot Lite
 
-# Hi, I'm Ricardo 👋
+📍 Tijuana, MX 🇲🇽 | 📬 moranmaldonadoricardo@gmail.com
 
-### Go Developer | Security First | Dependabot Lite
-📍 Tijuana, MX 🇲🇽 | 📫 moranmaldonadoricardo@gmail.com
-
-<p>
-<img src="https://img.shields.io/badge/Go-1.27-00ADD8?style=for-the-badge&logo=go&logoColor=white" />
-<img src="https://img.shields.io/badge/Security-First-FF0000?style=for-the-badge&logo=hackthebox&logoColor=white" />
-<img src="https://img.shields.io/badge/Dependabot-Lite-025E8C?style=for-the-badge&logo=dependabot&logoColor=white" />
-<img src="https://komarev.com/ghpvc/?username=moranricardo&label=Profile%20views&color=0e75b6&style=flat" />
-</p>
+![Go](https://img.shields.io/badge/Go-1.27-00ADD8?style=for-the-badge&logo=go&logoColor=white)
+![Security](https://img.shields.io/badge/Security-First-FF0000?style=for-the-badge&logo=hackthebox&logoColor=white)
+![Dependabot](https://img.shields.io/badge/Dependabot-Lite-025E8C?style=for-the-badge&logo=dependabot&logoColor=white)
+![Profile views](https://komarev.com/ghpvc/?username=moranricardo&label=Profile%20views&color=0e75b6&style=flat)
 
 ---
 
-**Building secure, efficient tools with Go. Focused on Dependabot Lite and Security Best Practices.**
+### Building secure, efficient tools with Go. Focused on Dependabot Lite and Security Best Practices.
 
-- 🔭 Working on: Go 1.27 migration & security hardening
-- 🌱 Learning: Advanced Go Patterns & Cloud Native
-- 🛡️ Philosophy: Security First, Code Always
+- 🔭 Working on: Go 1.27 + Dependabot Lite v0.5.3 ARM32 Diamond
+- 🌱 Learning: Native Go runners, low-resource optimization, strict error propagation
+- 🛡️ Focus: Security First, reproducible builds without cgo
+- 📦 Main project: [moranricardo/cli](https://github.com/moranricardo/cli) — Dependabot Lite native
 
-### 🛠️ Stack
-`Go` `Bash` `Docker` `GitHub Actions` `Linux` `Security`
-
-### 📊 Stats
-![Stats](https://github-readme-stats.vercel.app/api?username=moranricardo&show_icons=true&theme=tokyonight&hide_border=true)
-![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=moranricardo&layout=compact&theme=tokyonight&hide_border=true)
+#### Featured
+- **cli v0.5.3-lite** — 2.8M ARM 32-bit, native Go, no Docker, timeout 10s
+- **docs/debugging.md** — Low-resource debugging guide
+- **Go 1.27 STABLE**
 
 ---
-⚡ Security First, Code Always ⚡
+*Low-resource • Native • Secure*
