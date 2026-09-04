@@ -36,7 +36,7 @@ jobs:
           cd /tmp/scan
 
           # lista dinamica de todos tus repos publicos
-          REPOS=$(gh repo list moranricardo --limit 100 --json name,isFork -q '.[] | select(.isFork==false) | .name | select(startswith("skills-") | not)')
+          REPOS=$(gh repo list moranricardo --limit 100 --json name,isFork -q '.[] | select(.isFork==false) | .name | select((startswith("skills-") or . == "ra-pulse-orchestrator") | not)')
           echo "Repos detectados: $REPOS"
 
           for repo in $REPOS; do
