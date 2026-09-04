@@ -25,23 +25,23 @@ jobs:
         run: |
           echo "# PRISMA GHOST REPORT - $(date -u)" > REPORT.md
           GHOST=0; DESYNC=0; BROKEN=0
-          for d in./*; do
+          for d in ./*; do
             [ -d "$d" ] || continue
             echo "Scanning $d"
             if ls "$d"/*.go 2>/dev/null | head -1 | grep -q ".go"; then
-              if [! -f "$d/go.mod" ]; then
+              if [ ! -f "$d/go.mod" ]; then
                 echo "- GHOST FILE: $d tiene.go sin go.mod" >> REPORT.md; GHOST=1
               fi
             fi
-            if [ -f "$d/package.json" ] && [! -f "$d/package-lock.json" ] && [! -f "$d/pnpm-lock.yaml" ] && [! -f "$d/yarn.lock" ]; then
+            if [ -f "$d/package.json" ] && [ ! -f "$d/package-lock.json" ] && [ ! -f "$d/pnpm-lock.yaml" ] && [ ! -f "$d/yarn.lock" ]; then
               echo "- GHOST FILE: $d package.json sin lock" >> REPORT.md; GHOST=1
             fi
             if [ -f "$d/go.mod" ]; then
               (cd "$d" && go mod tidy -diff 2>&1 | grep -q.) && echo "- DESYNC: $d go.mod sucio" >>../REPORT.md && DESYNC=1 || true
             fi
             if [ -f "$d/go.mod" ]; then
-              (cd "$d" && go vet./... 2>>../REPORT.md) || { echo "- BROKEN CODE: $d go vet falla" >>../REPORT.md; BROKEN=1; }
-              (cd "$d" && go build./... 2>>../REPORT.md) || { echo "- BROKEN CODE: $d go build falla" >>../REPORT.md; BROKEN=1; }
+              (cd "$d" && go vet ./... 2>>../REPORT.md) || { echo "- BROKEN CODE: $d go vet falla" >>../REPORT.md; BROKEN=1; }
+              (cd "$d" && go build ./... 2>>../REPORT.md) || { echo "- BROKEN CODE: $d go build falla" >>../REPORT.md; BROKEN=1; }
             fi
             if [ -f "$d/package.json" ]; then
               (cd "$d" && npm run build >>../REPORT.md 2>&1) || { echo "- BROKEN CODE: $d npm build falla" >>../REPORT.md; BROKEN=1; }
