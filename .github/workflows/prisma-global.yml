@@ -34,7 +34,8 @@ jobs:
             echo "GO VERSION in $repo: $(go version)"
             if ls *.go 2>/dev/null | head -1 | grep -q ".go"; then
               if [ ! -f go.mod ]; then
-                echo "- GHOST FILE: $repo tiene.go sin go.mod" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md; GHOST=1
+                echo "- GHOST FILE: $repo tiene .go sin go.mod" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
+                GHOST=1
               fi
             fi
             if [ -f go.mod ]; then
@@ -46,7 +47,7 @@ jobs:
               fi
               go vet ./... 2>>$GITHUB_WORKSPACE/GLOBAL_REPORT.md || { echo "- BROKEN: $repo go vet falla" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md; BROKEN=1; }
             fi
-            cd..
+            cd ..
           done
           cd $GITHUB_WORKSPACE
           if [ $BROKEN -eq 1 ]; then
