@@ -59,7 +59,7 @@ jobs:
               echo "" >> $OUT_REPORT
             fi
           }
-          for d in./*; do
+          for d in ./*; do
             [ -d "$d" ] || continue
             scan_go "$d"
             scan_node "$d"
