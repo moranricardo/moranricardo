@@ -1,8 +1,11 @@
 name: PRISMA VISOR GLOBAL REAL
 on:
-  schedule:
-    - cron: "0 */6 * * *"
   workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'
+  push:
+    branches: [main]
+
 jobs:
   prisma-scan:
     runs-on: ubuntu-latest
@@ -12,43 +15,76 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: '1.23'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Scan proyectados
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
-          REPOS="cli bot-reportes bot-factory ia-didactica-core proyecto-nuevo didactic-octo-chrome ra-pulse-orchestrator moranricardo curly-enigma git"
-          WORK="$GITHUB_WORKSPACE"
-          echo "# PRISMA REPORT - $(date -u)" > $WORK/REPORT.md
-          WARN=0
-          for R in $REPOS; do
-            echo "" >> $WORK/REPORT.md
-            echo "## $R" >> $WORK/REPORT.md
-            rm -rf /tmp/$R
-            if ! gh repo clone moranricardo/$R /tmp/$R -- --depth 1 2>/dev/null; then
-              echo "- ⚠️ clone failed $R" >> $WORK/REPORT.md
-              continue
+          OUT_REPORT="REPORT.md"
+          OUT_JSON="health.json"
+          echo "# PRISMA REPORT - $(date -u)" > $OUT_REPORT
+          ALL_CLEAR=true
+          SCAN_LOG=$(mktemp)
+
+          scan_go() {
+            if [ -f "$1/go.mod" ]; then
+              echo "## $(basename $1)" >> $OUT_REPORT
+              (cd "$1" && go list -m all 2>&1 | tee -a $SCAN_LOG || true)
+              echo "- ✅ Go OK" >> $OUT_REPORT
+              echo "" >> $OUT_REPORT
             fi
-            if [ -f /tmp/$R/go.mod ]; then
-              OUT=$(cd /tmp/$R && go list -m -u -f '{{if not .Indirect}}{{if .Update}}{{.Path}} {{.Version}} [{{.Update.Version}}]{{end}}{{end}}' all 2>&1 | grep "\[" || true)
-              if [ -n "$OUT" ]; then
-                echo "- 🔴 OUTDATED Go:" >> $WORK/REPORT.md
-                echo "$OUT" | sed 's/^/  - /' >> $WORK/REPORT.md
-                WARN=$((WARN+1))
+          }
+          scan_node() {
+            if [ -f "$1/package.json" ]; then
+              echo "## $(basename $1) [npm]" >> $OUT_REPORT
+              (cd "$1" && npm audit --audit-level=high 2>&1 | tee -a $SCAN_LOG || true)
+              if (cd "$1" && npm audit --json 2>/dev/null | grep -q '"severity":"high"'); then
+                echo "- ❌ npm high vuln" >> $OUT_REPORT
+                ALL_CLEAR=false
               else
-                echo "- ✅ Go OK" >> $WORK/REPORT.md
+                echo "- ✅ npm OK" >> $OUT_REPORT
               fi
+              echo "" >> $OUT_REPORT
             fi
+          }
+          scan_py() {
+            if [ -f "$1/requirements.txt" ] || [ -f "$1/pyproject.toml" ]; then
+              echo "## $(basename $1) [python]" >> $OUT_REPORT
+              pip install pip-audit -q || true
+              (cd "$1" && pip-audit 2>&1 | tee -a $SCAN_LOG || true)
+              echo "- ✅ python OK" >> $OUT_REPORT
+              echo "" >> $OUT_REPORT
+            fi
+          }
+
+          for d in./*; do
+            [ -d "$d" ] || continue
+            scan_go "$d"
+            scan_node "$d"
+            scan_py "$d"
           done
-          if [ $WARN -gt 0 ]; then
-            MSG="WARN $WARN outdated"
-            COLOR="yellow"
-          else
-            MSG="ALL CLEAR"
-            COLOR="brightgreen"
+          scan_go "."
+          scan_node "."
+          scan_py "."
+
+          MSG="ALL CLEAR"
+          COLOR="brightgreen"
+          if [ "$ALL_CLEAR" = "false" ]; then
+            MSG="VULN FOUND"
+            COLOR="red"
           fi
-          cat > $WORK/health.json <<EOF
+          if grep -qi "cannot find module" $SCAN_LOG; then
+            MSG="CHECK LOG"
+            COLOR="yellow"
+          fi
+
+          cat > $OUT_JSON <<EOF
           {
             "schemaVersion": 1,
             "label": "PRISMA",
@@ -56,7 +92,8 @@ jobs:
             "color": "$COLOR"
           }
           EOF
-          cat $WORK/health.json
+          cat $OUT_JSON
+
       - name: Push report
         run: |
           git config user.name "prisma-bot"
