@@ -33,7 +33,7 @@ jobs:
             cd $repo
             echo "GO VERSION in $repo: $(go version)"
             if ls *.go 2>/dev/null | head -1 | grep -q ".go"; then
-              if [! -f go.mod ]; then
+              if [ ! -f go.mod ]; then
                 echo "- GHOST FILE: $repo tiene.go sin go.mod" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md; GHOST=1
               fi
             fi
@@ -44,7 +44,7 @@ jobs:
                 cat /tmp/diff.txt >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
                 DESYNC=1
               fi
-              go vet./... 2>>$GITHUB_WORKSPACE/GLOBAL_REPORT.md || { echo "- BROKEN: $repo go vet falla" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md; BROKEN=1; }
+              go vet ./... 2>>$GITHUB_WORKSPACE/GLOBAL_REPORT.md || { echo "- BROKEN: $repo go vet falla" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md; BROKEN=1; }
             fi
             cd..
           done
