@@ -9,46 +9,97 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: '1.27'
           check-latest: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
       - name: Setup tools
         run: |
           sudo apt-get update -y
           sudo apt-get install -y gh jq
-      - name: GLOBAL GHOSTBUSTER
+      - name: GLOBAL GHOSTBUSTER V2 - GENERAL MONITOR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
           echo "# PRISMA GLOBAL REPORT - $(date -u)" > GLOBAL_REPORT.md
+          echo "" >> GLOBAL_REPORT.md
           GHOST=0; DESYNC=0; BROKEN=0
           mkdir -p /tmp/scan
           cd /tmp/scan
-          for repo in didactic-octo-chrome moranricardo; do
-            echo "=== Cloning moranricardo/$repo ==="
+
+          # lista dinamica de todos tus repos publicos
+          REPOS=$(gh repo list moranricardo --limit 100 --json name -q '.[].name')
+          echo "Repos detectados: $REPOS"
+
+          for repo in $REPOS; do
+            echo "=== Scanning moranricardo/$repo ==="
             gh repo clone moranricardo/$repo $repo 2>&1 || continue
             cd $repo
-            echo "GO VERSION in $repo: $(go version)"
-            if ls *.go 2>/dev/null | head -1 | grep -q ".go"; then
-              if [ ! -f go.mod ]; then
-                echo "- GHOST FILE: $repo tiene .go sin go.mod" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
+            echo "### $repo" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
+
+            # --- GHOST DETECTION GENERAL ---
+            if ls *.go 2>/dev/null | grep -q ".go" && [ ! -f go.mod ]; then
+              echo "- GHOST: $repo tiene .go sin go.mod" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
+              GHOST=1
+            fi
+            if ls *.py 2>/dev/null | grep -q ".py" && [ ! -f pyproject.toml ] && [ ! -f requirements.txt ] && [ ! -f setup.py ]; then
+              echo "- GHOST: $repo tiene .py sin pyproject/requirements" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
+              GHOST=1
+            fi
+            if [ -f package.json ]; then
+              # js project ok
+              :
+            else
+              if ls *.js *.ts 2>/dev/null | grep -q "." && [ ! -f package.json ]; then
+                echo "- GHOST: $repo tiene .js/.ts sin package.json" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
                 GHOST=1
               fi
             fi
+            if ls *.rs 2>/dev/null | grep -q ".rs" && [ ! -f Cargo.toml ]; then
+              echo "- GHOST: $repo tiene .rs sin Cargo.toml" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
+              GHOST=1
+            fi
+
+            # --- DESYNC / BROKEN ---
             if [ -f go.mod ]; then
+              echo "Checking Go $repo: $(go version)" 
               go mod tidy -diff 2>&1 | tee /tmp/diff.txt || true
               if [ -s /tmp/diff.txt ]; then
-                echo "- DESYNC: $repo go.mod sucio" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
+                echo "- DESYNC Go: $repo go.mod sucio" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
                 cat /tmp/diff.txt >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
                 DESYNC=1
               fi
-              go vet ./... 2>>$GITHUB_WORKSPACE/GLOBAL_REPORT.md || { echo "- BROKEN: $repo go vet falla" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md; BROKEN=1; }
+              go vet ./... 2>>$GITHUB_WORKSPACE/GLOBAL_REPORT.md || { echo "- BROKEN Go: $repo go vet falla" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md; BROKEN=1; }
             fi
+
+            if [ -f package.json ]; then
+              if [ ! -f package-lock.json ] && [ ! -f yarn.lock ] && [ ! -f pnpm-lock.yaml ]; then
+                echo "- DESYNC Node: $repo tiene package.json sin lockfile" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
+                DESYNC=1
+              fi
+              # opcional: npm audit check si quieres
+            fi
+
+            if [ -f pyproject.toml ] || [ -f requirements.txt ]; then
+              python3 -m py_compile $(find . -name "*.py" 2>/dev/null | head -20) 2>>$GITHUB_WORKSPACE/GLOBAL_REPORT.md || { echo "- BROKEN Python: $repo py_compile falla" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md; BROKEN=1; }
+            fi
+
+            if [ -f Cargo.toml ]; then
+              cargo check 2>>$GITHUB_WORKSPACE/GLOBAL_REPORT.md || { echo "- BROKEN Rust: $repo cargo check falla" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md; BROKEN=1; }
+            fi
+
             cd ..
+            echo "" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
           done
+
           cd $GITHUB_WORKSPACE
           if [ $BROKEN -eq 1 ]; then
             echo '{"schemaVersion":1,"label":"PRISMA GLOBAL","message":"BROKEN CODE","color":"red"}' > global-health.json
@@ -68,5 +119,5 @@ jobs:
           git config user.name "prisma-global"
           git config user.email "prisma@global.local"
           git add GLOBAL_REPORT.md global-health.json || true
-          git diff --cached --quiet || git commit -m "prisma global: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git diff --cached --quiet || git commit -m "prisma global v2: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           git push || (git pull --rebase && git push)
