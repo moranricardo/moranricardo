@@ -26,7 +26,7 @@ jobs:
           cd /tmp/scan
 
           # Lista tus repos activos (ajusta aquí)
-          for repo in ra-pulse-orchestrator bot-factory ia-didactica-core proyecto-nuevo; do
+          for repo in didactic-octo-chrome scaling-meme moranricardo; do
             echo "=== Cloning moranricardo/$repo ==="
             gh repo clone moranricardo/$repo $repo 2>&1 || continue
             cd $repo
