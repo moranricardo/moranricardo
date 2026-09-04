@@ -1,14 +1,13 @@
-# PRISMA REPORT - Fri Sep  4 12:17:10 UTC 2026
+# PRISMA REPORT - Fri Sep  4 12:34:43 UTC 2026
 
 ## cli
 Cloning into '/tmp/cli'...
 - 🔴 OUTDATED Go:
-  - github.com/cpuguy83/go-md2man/v2 v2.0.4 [v2.0.7]
+  - github.com/cpuguy83/go-md2man/v2 v2.0.6 [v2.0.7]
   - github.com/creack/pty v1.1.9 [v1.1.24]
   - github.com/kr/pty v1.1.1 [v1.1.8]
   - github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e [v0.0.0-20241224192749-4e6772a4315c]
-  - github.com/spf13/cobra v1.8.1 [v1.10.2]
-  - github.com/spf13/pflag v1.0.5 [v1.0.10]
+  - go.yaml.in/yaml/v3 v3.0.4 [v3.0.5]
   - golang.org/x/mod v0.21.0 [v0.40.0]
   - golang.org/x/sys v0.26.0 [v0.47.0]
   - golang.org/x/tools v0.26.0 [v0.49.0]
