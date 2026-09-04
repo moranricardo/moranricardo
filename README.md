@@ -9,8 +9,8 @@
 Building secure, efficient tools with Go. Focused on Dependabot Lite v0.5.3-lite Diamond ARM32.
 
 ---
-- Go 1.27 STABLE native
-- Dependabot Lite Diamond 2.8M ARM
-- Security First
+- Go 1.27 STABLE native CGO_ENABLED=0
+- Dependabot Lite v0.5.3-lite Diamond 2.8M ARM32
+- Security First netgo + osusergo
 
-Featured: moranricardo/cli
+Featured: moranricardo/cli - native, no Docker
