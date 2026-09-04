@@ -1,0 +1,65 @@
+name: PRISMA GLOBAL ORCHESTRATOR
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'
+jobs:
+  global-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup tools
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y gh jq
+          gh --version
+      - name: GLOBAL GHOSTBUSTER
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          echo "# PRISMA GLOBAL REPORT - $(date -u)" > GLOBAL_REPORT.md
+          GHOST=0; DESYNC=0; BROKEN=0
+          mkdir -p /tmp/scan
+          cd /tmp/scan
+
+          # Lista tus repos activos (ajusta aquí)
+          for repo in didactic-octo-chrome scaling-meme training-kit git moranricardo; do
+            echo "=== Cloning moranricardo/$repo ==="
+            gh repo clone moranricardo/$repo $repo 2>&1 || continue
+            cd $repo
+            if ls *.go 2>/dev/null | head -1 | grep -q ".go"; then
+              if [ ! -f go.mod ]; then
+                echo "- GHOST FILE: $repo tiene .go sin go.mod" >> ../../moranricardo/GLOBAL_REPORT.md || echo "- GHOST FILE: $repo tiene .go sin go.mod" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md; GHOST=1
+              fi
+            fi
+            if [ -f go.mod ]; then
+              (go mod tidy -diff 2>&1 | grep -q .) && echo "- DESYNC: $repo go.mod sucio" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md && DESYNC=1 || true
+              go vet ./... 2>>$GITHUB_WORKSPACE/GLOBAL_REPORT.md || { echo "- BROKEN: $repo go vet falla" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md; BROKEN=1; }
+            fi
+            cd ..
+          done
+
+          cd $GITHUB_WORKSPACE
+          if [ $BROKEN -eq 1 ]; then
+            echo '{"schemaVersion":1,"label":"PRISMA GLOBAL","message":"BROKEN CODE","color":"red"}' > global-health.json
+          elif [ $DESYNC -eq 1 ] && [ $GHOST -eq 1 ]; then
+            echo '{"schemaVersion":1,"label":"PRISMA GLOBAL","message":"FANTASMA TOTAL","color":"critical"}' > global-health.json
+          elif [ $DESYNC -eq 1 ]; then
+            echo '{"schemaVersion":1,"label":"PRISMA GLOBAL","message":"DESYNC","color":"orange"}' > global-health.json
+          elif [ $GHOST -eq 1 ]; then
+            echo '{"schemaVersion":1,"label":"PRISMA GLOBAL","message":"GHOST FILE","color":"yellow"}' > global-health.json
+          else
+            echo '{"schemaVersion":1,"label":"PRISMA GLOBAL","message":"ALL CLEAR","color":"brightgreen"}' > global-health.json
+          fi
+          cat global-health.json
+          cat GLOBAL_REPORT.md
+      - name: Push global reports
+        run: |
+          git config user.name "prisma-global"
+          git config user.email "prisma@global.local"
+          git add GLOBAL_REPORT.md global-health.json || true
+          git diff --cached --quiet || git commit -m "prisma global: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push || (git pull --rebase && git push)
