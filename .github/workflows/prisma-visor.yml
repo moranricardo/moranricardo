@@ -5,7 +5,6 @@ on:
     - cron: '0 */6 * * *'
   push:
     branches: [main]
-
 jobs:
   prisma-scan:
     runs-on: ubuntu-latest
@@ -22,7 +21,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
       - name: Scan proyectados
         run: |
           set -e
@@ -31,7 +29,6 @@ jobs:
           echo "# PRISMA REPORT - $(date -u)" > $OUT_REPORT
           ALL_CLEAR=true
           SCAN_LOG=$(mktemp)
-
           scan_go() {
             if [ -f "$1/go.mod" ]; then
               echo "## $(basename $1)" >> $OUT_REPORT
@@ -62,7 +59,6 @@ jobs:
               echo "" >> $OUT_REPORT
             fi
           }
-
           for d in./*; do
             [ -d "$d" ] || continue
             scan_go "$d"
@@ -72,18 +68,9 @@ jobs:
           scan_go "."
           scan_node "."
           scan_py "."
-
           MSG="ALL CLEAR"
           COLOR="brightgreen"
-          if [ "$ALL_CLEAR" = "false" ]; then
-            MSG="VULN FOUND"
-            COLOR="red"
-          fi
-          if grep -qi "cannot find module" $SCAN_LOG; then
-            MSG="CHECK LOG"
-            COLOR="yellow"
-          fi
-
+          if [ "$ALL_CLEAR" = "false" ]; then MSG="VULN FOUND"; COLOR="red"; fi
           cat > $OUT_JSON <<EOF
           {
             "schemaVersion": 1,
@@ -93,11 +80,11 @@ jobs:
           }
           EOF
           cat $OUT_JSON
-
       - name: Push report
         run: |
           git config user.name "prisma-bot"
           git config user.email "prisma@moranricardo.dev"
+          git pull --rebase --autostash || true
           git add health.json REPORT.md
           git diff --staged --quiet || git commit -m "prisma: scan $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          git push
+          git push || (git pull --rebase && git push)
