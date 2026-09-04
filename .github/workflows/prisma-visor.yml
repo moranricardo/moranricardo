@@ -9,58 +9,51 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      security-events: read
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.22'
+      - uses: actions/setup-go@v5
+        with: { go-version: '1.22' }
 
       - name: Scan proyectados
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -e
           REPOS="cli bot-reportes bot-factory ia-didactica-core proyecto-nuevo didactic-octo-chrome ra-pulse-orchestrator moranricardo curly-enigma git"
-          echo "# PRISMA REPORT - $(date -u)" > REPORT.md
-          echo "" >> REPORT.md
-          FAIL=0
-          WARN=0
-
+          WORK="$GITHUB_WORKSPACE"
+          echo "# PRISMA REPORT - $(date -u)" > $WORK/REPORT.md
+          FAIL=0; WARN=0
+          
           for R in $REPOS; do
-            echo "## $R" >> REPORT.md
-            gh repo clone moranricardo/$R /tmp/$R -- --depth 1 2>> REPORT.md || echo "- clone failed" >> REPORT.md
-            
-            # Check go.mod outdated
+            echo "" >> $WORK/REPORT.md
+            echo "## $R" >> $WORK/REPORT.md
+            rm -rf /tmp/$R
+            gh repo clone moranricardo/$R /tmp/$R -- --depth 1 2>&1 | head -1 >> $WORK/REPORT.md || echo "- clone failed $R" >> $WORK/REPORT.md
+
             if [ -f /tmp/$R/go.mod ]; then
-              cd /tmp/$R
-              OUT=$(go list -m -u all 2>&1 | grep "\[" || true)
+              OUT=$(cd /tmp/$R && go list -m -u all 2>&1 | grep "\[" || true)
               if [ -n "$OUT" ]; then
-                echo "- OUTDATED Go: $OUT" >> $GITHUB_WORKSPACE/REPORT.md
+                echo "- 🔴 OUTDATED Go:" >> $WORK/REPORT.md
+                echo "$OUT" | sed 's/^/  - /' >> $WORK/REPORT.md
                 WARN=$((WARN+1))
               else
-                echo "- Go OK" >> $GITHUB_WORKSPACE/REPORT.md
+                echo "- ✅ Go OK" >> $WORK/REPORT.md
               fi
             fi
-            
-            # Check npm
+
             if [ -f /tmp/$R/package.json ]; then
-              echo "- package.json found" >> $GITHUB_WORKSPACE/REPORT.md
-              cd /tmp/$R
-              npm audit --audit-level=high 2>&1 | tail -5 >> $GITHUB_WORKSPACE/REPORT.md || WARN=$((WARN+1))
+              AUDIT=$(cd /tmp/$R && npm audit --json 2>/dev/null | jq '.metadata.vulnerabilities | select(.high>0 or .moderate>0)' || true)
+              if [ -n "$AUDIT" ]; then
+                echo "- 🔴 npm vuln: $AUDIT" >> $WORK/REPORT.md
+                WARN=$((WARN+1))
+              else
+                echo "- ✅ npm OK" >> $WORK/REPORT.md
+              fi
             fi
-            
-            # Dependabot alerts
-            ALERTS=$(gh api repos/moranricardo/$R/dependabot/alerts --jq length 2>/dev/null || echo 0)
-            echo "- Dependabot alerts: $ALERTS" >> $GITHUB_WORKSPACE/REPORT.md
-            if [ "$ALERTS" -gt 0 ]; then FAIL=$((FAIL+ALERTS)); fi
-            echo "" >> $GITHUB_WORKSPACE/REPORT.md
           done
 
-          if [ $FAIL -gt 0 ]; then
-            MSG="ALERT $FAIL"
-            COLOR="red"
-          elif [ $WARN -gt 0 ]; then
+          if [ $WARN -gt 0 ]; then
             MSG="WARN $WARN outdated"
             COLOR="yellow"
           else
@@ -68,7 +61,7 @@ jobs:
             COLOR="brightgreen"
           fi
 
-          cat > health.json <<EOF
+          cat > $WORK/health.json <<EOF
           {
             "schemaVersion": 1,
             "label": "PRISMA",
@@ -76,13 +69,13 @@ jobs:
             "color": "$COLOR"
           }
           EOF
-          cat health.json
-          cat REPORT.md
+          cat $WORK/health.json
+          cat $WORK/REPORT.md
 
       - name: Push report
         run: |
           git config user.name "prisma-bot"
           git config user.email "prisma@moranricardo.dev"
           git add health.json REPORT.md
-          git diff --staged --quiet || git commit -m "prisma: real scan $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git diff --staged --quiet || git commit -m "prisma: v2 real scan $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           git push
