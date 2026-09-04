@@ -36,7 +36,7 @@ jobs:
               fi
             fi
             if [ -f go.mod ]; then
-              (go mod tidy -diff 2>&1 | grep -q .) && echo "- DESYNC: $repo go.mod sucio" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md && DESYNC=1 || true
+              echo "GO VERSION: $(go version)"; go mod tidy -diff; echo "---DIFF CHECK---"; go mod tidy -diff 2>&1 | tee /tmp/diff.txt; cat /tmp/diff.txt; if [ -s /tmp/diff.txt ]; then echo "- DESYNC: $repo go.mod sucio diff:"; cat /tmp/diff.txt; DESYNC=1; fi; go mod tidy; git diff >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md && DESYNC=1 || true
               go vet ./... 2>>$GITHUB_WORKSPACE/GLOBAL_REPORT.md || { echo "- BROKEN: $repo go vet falla" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md; BROKEN=1; }
             fi
             cd ..
