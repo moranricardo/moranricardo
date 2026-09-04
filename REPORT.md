@@ -1,4 +1,4 @@
-# PRISMA REPORT - Fri Sep  4 12:34:43 UTC 2026
+# PRISMA REPORT - Fri Sep  4 12:38:17 UTC 2026
 
 ## cli
 Cloning into '/tmp/cli'...
@@ -14,14 +14,7 @@ Cloning into '/tmp/cli'...
 
 ## bot-reportes
 Cloning into '/tmp/bot-reportes'...
-- 🔴 npm vuln: {
-  "info": 0,
-  "low": 0,
-  "moderate": 1,
-  "high": 1,
-  "critical": 0,
-  "total": 2
-}
+- ✅ npm OK
 
 ## bot-factory
 Cloning into '/tmp/bot-factory'...
