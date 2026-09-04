@@ -1,19 +1,21 @@
-name: PRISMA VISOR GLOBAL REAL
-on:
-  schedule:
-    - cron: "0 */6 * * *"
-  workflow_dispatch:
-
-jobs:
-  prisma-scan:
-    runs-on: ubuntu-latest
+# pega todo, guarda CTRL+O, CTRL+X
+git add 
+.github/workflows/prisma-visor.ymlname: 
+PRISMA VISOR GLOBAL REAL on: git commit -m 
+"fix: prisma v3 clean direct only" 
+schedule: git push - cron: "0 */6 * * *" 
+gh workflow run "PRISMA VISOR GLOBAL REAL" 
+workflow_dispatch: gh run watch jobs: git 
+pull prisma-scan:
+cat health.json    runs-on: ubuntu-latest
     permissions:
       contents: write
-      security-events: read
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-go@v5
-        with: { go-version: '1.22' }
+        with:
+          go-version: '1.25'
 
       - name: Scan proyectados
         env:
@@ -23,16 +25,21 @@ jobs:
           REPOS="cli bot-reportes bot-factory ia-didactica-core proyecto-nuevo didactic-octo-chrome ra-pulse-orchestrator moranricardo curly-enigma git"
           WORK="$GITHUB_WORKSPACE"
           echo "# PRISMA REPORT - $(date -u)" > $WORK/REPORT.md
-          FAIL=0; WARN=0
-          
+          WARN=0
+
           for R in $REPOS; do
             echo "" >> $WORK/REPORT.md
             echo "## $R" >> $WORK/REPORT.md
             rm -rf /tmp/$R
-            gh repo clone moranricardo/$R /tmp/$R -- --depth 1 2>&1 | head -1 >> $WORK/REPORT.md || echo "- clone failed $R" >> $WORK/REPORT.md
+            if ! gh repo clone moranricardo/$R /tmp/$R -- --depth 1 2>/dev/null; then
+              echo "- ⚠️ clone failed $R" >> $WORK/REPORT.md
+              continue
+            fi
+            echo "Cloning into '/tmp/$R'..." >> $WORK/REPORT.md
 
+            # GO - SOLO DIRECTOS
             if [ -f /tmp/$R/go.mod ]; then
-              OUT=$(cd /tmp/$R && go list -m -u all 2>&1 | grep "\[" || true)
+              OUT=$(cd /tmp/$R && go list -m -u -f '{{if not .Indirect}}{{if .Update}}{{.Path}} {{.Version}} [{{.Update.Version}}]{{end}}{{end}}' all 2>&1 | grep -v "^go:" | grep "\[" || true)
               if [ -n "$OUT" ]; then
                 echo "- 🔴 OUTDATED Go:" >> $WORK/REPORT.md
                 echo "$OUT" | sed 's/^/  - /' >> $WORK/REPORT.md
@@ -42,13 +49,18 @@ jobs:
               fi
             fi
 
+            # NPM
             if [ -f /tmp/$R/package.json ]; then
-              AUDIT=$(cd /tmp/$R && npm audit --json 2>/dev/null | jq '.metadata.vulnerabilities | select(.high>0 or .moderate>0)' || true)
-              if [ -n "$AUDIT" ]; then
-                echo "- 🔴 npm vuln: $AUDIT" >> $WORK/REPORT.md
-                WARN=$((WARN+1))
+              if [ -f /tmp/$R/package-lock.json ]; then
+                VULN=$(cd /tmp/$R && npm audit --json 2>/dev/null | jq -e '.metadata.vulnerabilities | select((.high // 0) > 0 or (.moderate // 0) > 0)' > /dev/null && echo "yes" || echo "no")
+                if [ "$VULN" = "yes" ]; then
+                  echo "- 🔴 npm vuln" >> $WORK/REPORT.md
+                  WARN=$((WARN+1))
+                else
+                  echo "- ✅ npm OK" >> $WORK/REPORT.md
+                fi
               else
-                echo "- ✅ npm OK" >> $WORK/REPORT.md
+                echo "- ✅ npm OK (no lock)" >> $WORK/REPORT.md
               fi
             fi
           done
@@ -58,24 +70,4 @@ jobs:
             COLOR="yellow"
           else
             MSG="ALL CLEAR"
-            COLOR="brightgreen"
-          fi
-
-          cat > $WORK/health.json <<EOF
-          {
-            "schemaVersion": 1,
-            "label": "PRISMA",
-            "message": "$MSG",
-            "color": "$COLOR"
-          }
-          EOF
-          cat $WORK/health.json
-          cat $WORK/REPORT.md
-
-      - name: Push report
-        run: |
-          git config user.name "prisma-bot"
-          git config user.email "prisma@moranricardo.dev"
-          git add health.json REPORT.md
-          git diff --staged --quiet || git commit -m "prisma: v2 real scan $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          git push
+            COLOR="brightgreen
