@@ -1,25 +1,23 @@
-# Ricardo Moran — Go Developer | Security First | Dependabot Lite
+# Ricardo Moran — Go Developer | Security First
 
-📍 Tijuana, MX 🇲🇽 | 📬 moranmaldonadoricardo@gmail.com
+Go 1.27 | Dependabot Lite | Security First | Profile views
 
-![Go](https://img.shields.io/badge/Go-1.27-00ADD8?style=for-the-badge&logo=go&logoColor=white)
-![Security](https://img.shields.io/badge/Security-First-FF0000?style=for-the-badge&logo=hackthebox&logoColor=white)
-![Dependabot](https://img.shields.io/badge/Dependabot-Lite-025E8C?style=for-the-badge&logo=dependabot&logoColor=white)
-![Profile views](https://komarev.com/ghpvc/?username=moranricardo&label=Profile%20views&color=0e75b6&style=flat)
+📍 Tijuana, MX | moranmaldonadoricardo@gmail.com
+Building secure, efficient tools with Go
 
 ---
 
-### Building secure, efficient tools with Go. Focused on Dependabot Lite and Security Best Practices.
+### Current Focus
+- Go 1.27 STABLE - CGO_ENABLED=0 reproducible builds
+- Dependabot Lite v0.5.3-lite Diamond - ARM 32-bit 2.8M
+- Security First - netgo + osusergo + trimpath
 
-- 🔭 Working on: Go 1.27 + Dependabot Lite v0.5.3 ARM32 Diamond
-- 🌱 Learning: Native Go runners, low-resource optimization, strict error propagation
-- 🛡️ Focus: Security First, reproducible builds without cgo
-- 📦 Main project: [moranricardo/cli](https://github.com/moranricardo/cli) — Dependabot Lite native
+### Featured
+moranricardo/cli - Dependabot Lite native
+- Native build no Docker
+- docs/debugging.md low-resource guide
 
-#### Featured
-- **cli v0.5.3-lite** — 2.8M ARM 32-bit, native Go, no Docker, timeout 10s
-- **docs/debugging.md** — Low-resource debugging guide
-- **Go 1.27 STABLE**
+### Stack
+Go | Git | Linux ARM | Security | Dependabot
 
----
-*Low-resource • Native • Secure*
+Low-resource | Native | Secure | Diamond
