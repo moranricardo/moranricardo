@@ -10,11 +10,14 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27'
+          check-latest: true
       - name: Setup tools
         run: |
           sudo apt-get update -y
           sudo apt-get install -y gh jq
-          gh --version
       - name: GLOBAL GHOSTBUSTER
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -24,24 +27,27 @@ jobs:
           GHOST=0; DESYNC=0; BROKEN=0
           mkdir -p /tmp/scan
           cd /tmp/scan
-
-          # Lista tus repos activos (ajusta aquí)
           for repo in didactic-octo-chrome moranricardo; do
             echo "=== Cloning moranricardo/$repo ==="
             gh repo clone moranricardo/$repo $repo 2>&1 || continue
             cd $repo
+            echo "GO VERSION in $repo: $(go version)"
             if ls *.go 2>/dev/null | head -1 | grep -q ".go"; then
-              if [ ! -f go.mod ]; then
-                echo "- GHOST FILE: $repo tiene .go sin go.mod" >> ../../moranricardo/GLOBAL_REPORT.md || echo "- GHOST FILE: $repo tiene .go sin go.mod" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md; GHOST=1
+              if [! -f go.mod ]; then
+                echo "- GHOST FILE: $repo tiene.go sin go.mod" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md; GHOST=1
               fi
             fi
             if [ -f go.mod ]; then
-              echo "GO VERSION: $(go version)"; go mod tidy -diff; echo "---DIFF CHECK---"; go mod tidy -diff 2>&1 | tee /tmp/diff.txt; cat /tmp/diff.txt; if [ -s /tmp/diff.txt ]; then echo "- DESYNC: $repo go.mod sucio diff:"; cat /tmp/diff.txt; DESYNC=1; fi; go mod tidy; git diff >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md && DESYNC=1 || true
-              go vet ./... 2>>$GITHUB_WORKSPACE/GLOBAL_REPORT.md || { echo "- BROKEN: $repo go vet falla" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md; BROKEN=1; }
+              go mod tidy -diff 2>&1 | tee /tmp/diff.txt || true
+              if [ -s /tmp/diff.txt ]; then
+                echo "- DESYNC: $repo go.mod sucio" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
+                cat /tmp/diff.txt >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
+                DESYNC=1
+              fi
+              go vet./... 2>>$GITHUB_WORKSPACE/GLOBAL_REPORT.md || { echo "- BROKEN: $repo go vet falla" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md; BROKEN=1; }
             fi
-            cd ..
+            cd..
           done
-
           cd $GITHUB_WORKSPACE
           if [ $BROKEN -eq 1 ]; then
             echo '{"schemaVersion":1,"label":"PRISMA GLOBAL","message":"BROKEN CODE","color":"red"}' > global-health.json
