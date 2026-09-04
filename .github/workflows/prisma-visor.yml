@@ -1,21 +1,88 @@
-name: PRISMA VISOR GLOBAL
+name: PRISMA VISOR GLOBAL REAL
 on:
-  workflow_dispatch:
   schedule:
     - cron: "0 */6 * * *"
-permissions:
-  contents: write
+  workflow_dispatch:
+
 jobs:
-  scan:
+  prisma-scan:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          echo "{"schemaVersion":1,"label":"PRISMA","message":"ALL CLEAR","color":"00ADD8"}" > health.json
-          date >> REPORT.md
-      - run: |
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Scan proyectados
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPOS="cli bot-reportes bot-factory ia-didactica-core proyecto-nuevo didactic-octo-chrome ra-pulse-orchestrator moranricardo curly-enigma git"
+          echo "# PRISMA REPORT - $(date -u)" > REPORT.md
+          echo "" >> REPORT.md
+          FAIL=0
+          WARN=0
+
+          for R in $REPOS; do
+            echo "## $R" >> REPORT.md
+            gh repo clone moranricardo/$R /tmp/$R -- --depth 1 2>> REPORT.md || echo "- clone failed" >> REPORT.md
+            
+            # Check go.mod outdated
+            if [ -f /tmp/$R/go.mod ]; then
+              cd /tmp/$R
+              OUT=$(go list -m -u all 2>&1 | grep "\[" || true)
+              if [ -n "$OUT" ]; then
+                echo "- OUTDATED Go: $OUT" >> $GITHUB_WORKSPACE/REPORT.md
+                WARN=$((WARN+1))
+              else
+                echo "- Go OK" >> $GITHUB_WORKSPACE/REPORT.md
+              fi
+            fi
+            
+            # Check npm
+            if [ -f /tmp/$R/package.json ]; then
+              echo "- package.json found" >> $GITHUB_WORKSPACE/REPORT.md
+              cd /tmp/$R
+              npm audit --audit-level=high 2>&1 | tail -5 >> $GITHUB_WORKSPACE/REPORT.md || WARN=$((WARN+1))
+            fi
+            
+            # Dependabot alerts
+            ALERTS=$(gh api repos/moranricardo/$R/dependabot/alerts --jq length 2>/dev/null || echo 0)
+            echo "- Dependabot alerts: $ALERTS" >> $GITHUB_WORKSPACE/REPORT.md
+            if [ "$ALERTS" -gt 0 ]; then FAIL=$((FAIL+ALERTS)); fi
+            echo "" >> $GITHUB_WORKSPACE/REPORT.md
+          done
+
+          if [ $FAIL -gt 0 ]; then
+            MSG="ALERT $FAIL"
+            COLOR="red"
+          elif [ $WARN -gt 0 ]; then
+            MSG="WARN $WARN outdated"
+            COLOR="yellow"
+          else
+            MSG="ALL CLEAR"
+            COLOR="brightgreen"
+          fi
+
+          cat > health.json <<EOF
+          {
+            "schemaVersion": 1,
+            "label": "PRISMA",
+            "message": "$MSG",
+            "color": "$COLOR"
+          }
+          EOF
+          cat health.json
+          cat REPORT.md
+
+      - name: Push report
+        run: |
           git config user.name "prisma-bot"
-          git config user.email "bot@prisma"
+          git config user.email "prisma@moranricardo.dev"
           git add health.json REPORT.md
-          git commit -m "prisma auto" || true
-          git push || true
+          git diff --staged --quiet || git commit -m "prisma: real scan $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push
