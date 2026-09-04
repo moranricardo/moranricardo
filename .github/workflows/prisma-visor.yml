@@ -3,6 +3,8 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "0 */6 * * *"
+permissions:
+  contents: write
 jobs:
   scan:
     runs-on: ubuntu-latest
@@ -10,10 +12,10 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           echo "{"schemaVersion":1,"label":"PRISMA","message":"ALL CLEAR","color":"00ADD8"}" > health.json
-          echo "# PRISMA REPORT" > REPORT.md
+          date >> REPORT.md
       - run: |
           git config user.name "prisma-bot"
           git config user.email "bot@prisma"
           git add health.json REPORT.md
-          git commit -m "prisma" || true
+          git commit -m "prisma auto" || true
           git push || true
