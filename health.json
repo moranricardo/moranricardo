@@ -1,1 +1,6 @@
-{"schemaVersion":1,"label":"PRISMA","message":"ALL CLEAR","color":"00ADD8"}
+{
+  "schemaVersion": 1,
+  "label": "PRISMA",
+  "message": "WARN 2 outdated",
+  "color": "yellow"
+}
