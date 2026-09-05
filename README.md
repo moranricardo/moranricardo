@@ -1,4 +1,6 @@
-<div align="center">
+git commit -am "docs(profile): corrige GO 
+a 1.23 real + badge dependabot grouped" 
+git push<div align="center">
 
 <img src="https://github.com/moranricardo/moranricardo/raw/main/gopher.gif" width="90" alt="Go Gopher" />
 
