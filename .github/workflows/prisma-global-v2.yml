@@ -1,111 +1,73 @@
-name: PRISMA GLOBAL V2
+name: PRISMA GLOBAL V2.1
 
 on:
   workflow_dispatch:
   schedule:
     - cron: '0 */6 * * *'
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/prisma-global-v2.yml'
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   prisma-v2:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup GH CLI
-        run: gh auth setup --with-token <<< "${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}"
-
-      - name: PROPOSITO 1 - Seguridad Refinada (solo ejecutables)
+      - name: P1 - Seguridad Refinada (solo ejecutables)
         id: sec
         run: |
-          echo "### PROPOSITO 1: Seguridad Refinada" > /tmp/report.md
-          GHOST_CRITICAL=0
-          # Escaneo estricto: solo.go.sh.py.js.ts, ignora *.md
-          if grep -R -i "termux" --include="*.go" --include="*.sh" --include="*.py" --include="*.js" --include="*.ts" --exclude-dir=".git" --exclude-dir="node_modules" . 2>/dev/null; then
-            echo "CRITICAL_FOUND=true" >> $GITHUB_ENV
-            GHOST_CRITICAL=1
+          CRITICAL="false"
+          if grep -R -i "termux" --include="*.go" --include="*.sh" --include="*.py" --include="*.js" --include="*.ts" --exclude-dir=".git" . 2>/dev/null; then
+            CRITICAL="true"
           fi
-          # Escaneo global de org (solo para GLOBAL_REPORT, filtrado)
-          echo "" >> /tmp/report.md
-          for repo in cli termux-app moranricardo; do
-            echo "Scanning $repo..."
-          done
-          echo "CRITICAL=$GHOST_CRITICAL" >> /tmp/env.txt
+          echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
 
-      - name: PROPOSITO 2 - Salud Integrada
+      - name: P2 - Salud Integrada
         id: health
         run: |
-          BUILD_FAIL=0
-          OUTDATED=0
-          # Checa tus ultimos 5 runs de prisma y cli
-          FAIL_COUNT=$(gh run list --repo moranricardo/moranricardo --limit 5 --json conclusion -q '[.[] | select(.conclusion=="failure")] | length' || echo 0)
-          if [ "$FAIL_COUNT" -gt 0 ]; then
-            BUILD_FAIL=1
-          fi
-          echo "BUILD_FAIL=$BUILD_FAIL" >> $GITHUB_ENV
-          echo "OUTDATED=0" >> $GITHUB_ENV
+          FAIL=$(gh run list --repo moranricardo/moranricardo --limit 5 --json conclusion -q '[.[] | select(.conclusion=="failure")] | length' 2>/dev/null || echo 0)
+          echo "fail=$FAIL" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: PROPOSITO 3 - Estrategia Tabular
+      - name: P3 - Tabla + Deploy + Purge Camo
         run: |
-          source /tmp/env.txt 2>/dev/null || true
-          BUILD_FAIL=${BUILD_FAIL:-0}
+          CRITICAL="${{ steps.sec.outputs.critical }}"
+          FAIL="${{ steps.health.outputs.fail }}"
+          
+          if [ "$CRITICAL" = "true" ]; then
+            MSG="GHOST CRITICAL"; COLOR="red"
+          elif [ "$FAIL" -gt 0 ]; then
+            MSG="BUILD FAIL"; COLOR="yellow"
+          else
+            MSG="ALL CLEAR"; COLOR="brightgreen"
+          fi
 
-          cat > GLOBAL_REPORT.md << 'MD'
-          # PRISMA GLOBAL REPORT V2
-          > Sistema de monitoreo tricapa - $(date -u)
-
+          cat > GLOBAL_REPORT.md << MD
+          # PRISMA GLOBAL REPORT V2.1 - $(date -u)
           | Repositorio | Estado | Acción Recomendada |
           |---|---|---|
+          | moranricardo/moranricardo | $( [ "$CRITICAL" = "true" ] && echo "🔴 GHOST CRITICAL" || echo "🟢 OK P1" ) | Revisar *.sh/*.py, eliminar hardcoded termux |
+          | moranricardo/moranricardo | $( [ "$FAIL" -gt 0 ] && echo "🟡 BUILD FAIL" || echo "🟢 OK P2" ) | Corregir workflows con failure |
+          | termux-app | ⚪ GHOST DOCS | Solo .md, ignorado por filtro V2 |
+          | moranricardo/cli | 🟢 PENDIENTE SCAN | Validar en siguiente iteración |
+
+          **Capas:**
+          - P1 Seguridad: --include=*.go,*.sh,*.py,*.js,*.ts (ignora .md)
+          - P2 Salud: BUILD FAIL / ALL CLEAR
+          - P3 Estrategia: tabla + camo bust ?v=2
           MD
 
-          # Logica de decision tricapa
-          if [ "${{ env.CRITICAL_FOUND }}" == "true" ]; then
-            echo "| moranricardo/moranricardo | 🔴 GHOST CRITICAL | Revisar *.sh/*.py con referencia a termux, eliminar hardcoded path |" >> GLOBAL_REPORT.md
-            FINAL_MSG="GHOST CRITICAL"
-            FINAL_COLOR="red"
-          elif [ "$BUILD_FAIL" -gt 0 ]; then
-            echo "| moranricardo/moranricardo | 🟡 BUILD FAIL | Corregir fallo en workflow prisma-global.yml (referencia amarilla intencional) |" >> GLOBAL_REPORT.md
-            echo "| moranricardo/cli | 🟡 BUILD FAIL | Validar workflow de compilación |" >> GLOBAL_REPORT.md
-            FINAL_MSG="BUILD FAIL"
-            FINAL_COLOR="yellow"
-          else
-            echo "| moranricardo/moranricardo | 🟢 ALL CLEAR | Sin acción, ecosistema limpio |" >> GLOBAL_REPORT.md
-            echo "| moranricardo/cli | 🟢 ALL CLEAR | Sin acción |" >> GLOBAL_REPORT.md
-            FINAL_MSG="ALL CLEAR"
-            FINAL_COLOR="brightgreen"
+          echo "{\"schemaVersion\":1,\"label\":\"PRISMA\",\"message\":\"$MSG\",\"color\":\"$COLOR\"}" > prisma.json
+
+          if grep -q "prisma.json" README.md; then
+            perl -i -pe 's|prisma\.json[^)]*|prisma.json?v=2|g' README.md
           fi
 
-          echo "| termux-app | ⚪ GHOST DOCS | Solo documentación.md, ignorar (falso positivo filtrado por V2) |" >> GLOBAL_REPORT.md
-
-          cat >> GLOBAL_REPORT.md << MD
-
-          ### Capas Activas
-          - **P1 Seguridad Refinada**: Scan `--include=*.go,*.sh,*.py,*.js,*.ts` (ignora .md)
-          - **P2 Salud Integrada**: BUILD FAIL / OUTDATED / ALL CLEAR
-          - **P3 Estrategia Tabular**: Esta tabla
-
-          Camo bust: \`?v=2\`
-          MD
-
-          echo "{\"schemaVersion\":1,\"label\":\"PRISMA\",\"message\":\"$FINAL_MSG\",\"color\":\"$FINAL_COLOR\"}" > prisma.json
-          echo "FINAL=$FINAL_MSG $FINAL_COLOR" >> $GITHUB_ENV
-
-      - name: Deploy V2 + Purge Camo
-        run: |
-          # P1: Actualiza README con bust de cache?v=2 para matar camo estático
-          sed -i 's|prisma.json.*)|prisma.json?v=2\&cacheSeconds=60)|g' README.md || true
-          sed -i 's|prisma.json|prisma.json?v=2\&cacheSeconds=60|g' README.md || true
-
           git config user.name "prisma-bot-v2"
-          git config user.email "prisma-v2@moranricardo.dev"
-          git add prisma.json GLOBAL_REPORT.md README.md || true
-          git diff --cached --quiet || git commit -m "PRISMA V2: ${{ env.FINAL }} - tricapa activa"
+          git config user.email "prisma@moranricardo.dev"
+          git add prisma.json GLOBAL_REPORT.md README.md
+          git diff --cached --quiet || git commit -m "PRISMA V2.1: $MSG"
           git push
-
