@@ -1,12 +1,50 @@
-# PRISMA GLOBAL REPORT V2.1
-| Repositorio | Estado | Accion Recomendada |
-|---|---|---|
-| moranricardo/moranricardo | OK P1 | P1 Seguridad refinada: sin termux en *.go,*.sh,*.py |
-| moranricardo/moranricardo | BUILD FAIL | P2 Salud: corregir workflows con failure detectado |
-| termux-app | GHOST DOCS | Solo .md, ignorado por filtro V2 (falso positivo eliminado) |
-| moranricardo/cli | PENDIENTE SCAN | Validar en siguiente iteracion |
+# PRISMA GLOBAL REPORT - Sun Sep  6 14:56:24 UTC 2026
 
-**Capas activas confirmadas:**
-- P1 Seguridad: --include=*.go,*.sh,*.py,*.js,*.ts (ignora .md)
-- P2 Salud: BUILD FAIL / OUTDATED / ALL CLEAR -> actual: BUILD FAIL
-- P3 Estrategia: tabla estructurada + camo bust ?v=2
+### apps-android-wikipedia
+- status: 
+### bot-factory
+- status: success
+### bot-reportes
+- status: success
+### cli
+- status: success
+### curly-enigma
+- status: success
+### didactic-octo-chrome
+- status: success
+- GHOST termux encontrado
+### documentation
+- status: 
+### git
+- status: success
+- GHOST termux encontrado
+### hello-github-actions
+- status: 
+### ia-didactica-core
+- status: success
+### ishandutta2007
+- status: 
+### moranricardo
+- status: 
+- GHOST termux encontrado
+### proyecto-nuevo
+- status: success
+- GHOST termux encontrado
+### puppeteer
+- status: success
+### ra-pulse-orchestrator
+- status: success
+### reusable-workflows
+- status: 
+### scripts
+- status: 
+- GHOST termux encontrado
+### skills
+- status: 
+### skills-copilot-codespaces-vscode
+- status: success
+### skills-introduction-to-github
+- status: success
+### termux-app
+- status: 
+- GHOST termux encontrado
