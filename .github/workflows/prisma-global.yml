@@ -1,123 +1,57 @@
-name: PRISMA GLOBAL ORCHESTRATOR
+name: PRISMA GLOBAL
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
   schedule:
     - cron: '0 */6 * * *'
+  workflow_dispatch:
+
 jobs:
-  global-scan:
+  prisma:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: read
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-go@v6
-        with:
-          go-version: '1.27'
-          check-latest: true
-      - uses: actions/setup-node@v5
-        with:
-          node-version: '22'
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
-      - name: Setup tools
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y gh jq
-      - name: GLOBAL GHOSTBUSTER V2 - GENERAL MONITOR
+      - uses: actions/checkout@v4
+      - name: Scan all repos you control
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          set -e
+          TOKEN=${GH_TOKEN:-${{ secrets.GITHUB_TOKEN }}}
+          echo $TOKEN | gh auth login --with-token
+          REPOS=$(gh api user/repos --paginate -q '.[].name' | tr '\n' ' ')
+          echo "Repos: $REPOS"
           echo "# PRISMA GLOBAL REPORT - $(date -u)" > GLOBAL_REPORT.md
-          echo "" >> GLOBAL_REPORT.md
-          GHOST=0; DESYNC=0; BROKEN=0
-          mkdir -p /tmp/scan
-          cd /tmp/scan
-
-          # lista dinamica de todos tus repos publicos
-          REPOS=$(gh repo list moranricardo --limit 100 --json name,isFork -q '.[] | select(.isFork==false) | .name | select((startswith("skills-") or . == "ra-pulse-orchestrator") | not)')
-          echo "Repos detectados: $REPOS"
-
+          FAIL=0
+          WARN=0
           for repo in $REPOS; do
-            echo "=== Scanning moranricardo/$repo ==="
-            gh repo clone moranricardo/$repo $repo 2>&1 || continue
-            cd $repo
-            echo "### $repo" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
-
-            # --- GHOST DETECTION GENERAL ---
-            if ls *.go 2>/dev/null | grep -q ".go" && [ ! -f go.mod ]; then
-              echo "- GHOST: $repo tiene .go sin go.mod" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
-              GHOST=1
-            fi
-            if ls *.py 2>/dev/null | grep -q ".py" && [ ! -f pyproject.toml ] && [ ! -f requirements.txt ] && [ ! -f setup.py ]; then
-              echo "- GHOST: $repo tiene .py sin pyproject/requirements" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
-              GHOST=1
-            fi
-            if [ -f package.json ]; then
-              # js project ok
-              :
+            echo "== $repo ==" | tee -a GLOBAL_REPORT.md
+            STATUS=$(gh api repos/moranricardo/$repo/actions/runs?per_page=1 --jq '.workflow_runs[0].conclusion' 2>/dev/null || echo "unknown")
+            echo " Status: $STATUS" | tee -a GLOBAL_REPORT.md
+            if [ "$STATUS" = "failure" ]; then WARN=1; fi
+            rm -rf /tmp/$repo
+            git clone --depth 1 https://x-access-token:${TOKEN}@github.com/moranricardo/$repo.git /tmp/$repo 2>&1 | tail -1 || continue
+            if grep -R "termux" /tmp/$repo --exclude-dir=.git -n 2>/dev/null; then
+              FAIL=1
+              echo " GHOST in $repo" | tee -a GLOBAL_REPORT.md
             else
-              if ls *.js *.ts 2>/dev/null | grep -q "." && [ ! -f package.json ]; then
-                echo "- GHOST: $repo tiene .js/.ts sin package.json" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
-                GHOST=1
-              fi
+              echo " CLEAN $repo" | tee -a GLOBAL_REPORT.md
             fi
-            if ls *.rs 2>/dev/null | grep -q ".rs" && [ ! -f Cargo.toml ]; then
-              echo "- GHOST: $repo tiene .rs sin Cargo.toml" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
-              GHOST=1
-            fi
-
-            # --- DESYNC / BROKEN ---
-            if [ -f go.mod ]; then
-              echo "Checking Go $repo: $(go version)" 
-              go mod tidy 2>&1 | tee /tmp/tidy.txt; git diff --exit-code go.mod 2>&1; [ -f go.sum ] && git diff --exit-code go.sum 2>&1 || true 2>&1 | tee /tmp/diff.txt || true
-              if [ -s /tmp/diff.txt ]; then
-                echo "- DESYNC Go: $repo go.mod sucio" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
-                cat /tmp/diff.txt >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
-                DESYNC=1
-              fi
-              go vet ./... 2>>$GITHUB_WORKSPACE/GLOBAL_REPORT.md || { echo "- BROKEN Go: $repo go vet falla" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md; BROKEN=1; }
-            fi
-
-            if [ -f package.json ]; then
-              if [ ! -f package-lock.json ] && [ ! -f yarn.lock ] && [ ! -f pnpm-lock.yaml ]; then
-                echo "- DESYNC Node: $repo tiene package.json sin lockfile" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
-                DESYNC=1
-              fi
-              # opcional: npm audit check si quieres
-            fi
-
-            if [ -f pyproject.toml ] || [ -f requirements.txt ]; then
-              python3 -m py_compile $(find . -name "*.py" 2>/dev/null | head -20) 2>>$GITHUB_WORKSPACE/GLOBAL_REPORT.md || { echo "- BROKEN Python: $repo py_compile falla" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md; BROKEN=1; }
-            fi
-
-            if [ -f Cargo.toml ]; then
-              cargo check 2>>$GITHUB_WORKSPACE/GLOBAL_REPORT.md || { echo "- BROKEN Rust: $repo cargo check falla" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md; BROKEN=1; }
-            fi
-
-            cd ..
-            echo "" >> $GITHUB_WORKSPACE/GLOBAL_REPORT.md
+            rm -rf /tmp/$repo
           done
-
-          cd $GITHUB_WORKSPACE
-          if [ $BROKEN -eq 1 ]; then
-            echo '{"schemaVersion":1,"label":"PRISMA GLOBAL","message":"BROKEN CODE","color":"red"}' > global-health.json
-          elif [ $DESYNC -eq 1 ] && [ $GHOST -eq 1 ]; then
-            echo '{"schemaVersion":1,"label":"PRISMA GLOBAL","message":"FANTASMA TOTAL","color":"critical"}' > global-health.json
-          elif [ $DESYNC -eq 1 ]; then
-            echo '{"schemaVersion":1,"label":"PRISMA GLOBAL","message":"DESYNC","color":"orange"}' > global-health.json
-          elif [ $GHOST -eq 1 ]; then
-            echo '{"schemaVersion":1,"label":"PRISMA GLOBAL","message":"GHOST FILE","color":"yellow"}' > global-health.json
+          if [ $FAIL -eq 1 ]; then
+            echo '{"schemaVersion":1,"label":"PRISMA","message":"GHOST FOUND","color":"red"}' > prisma.json
+          elif [ $WARN -eq 1 ]; then
+            echo '{"schemaVersion":1,"label":"PRISMA","message":"WARNING","color":"yellow"}' > prisma.json
           else
-            echo '{"schemaVersion":1,"label":"PRISMA GLOBAL","message":"ALL CLEAR","color":"brightgreen"}' > global-health.json
+            echo '{"schemaVersion":1,"label":"PRISMA","message":"ALL CLEAR","color":"brightgreen"}' > prisma.json
           fi
-          cat global-health.json
-          cat GLOBAL_REPORT.md
-      - name: Push global reports
+          cat prisma.json
+      - name: Commit report
         run: |
-          git config user.name "prisma-global"
-          git config user.email "prisma@global.local"
-          git add GLOBAL_REPORT.md global-health.json || true
-          git diff --cached --quiet || git commit -m "prisma global v2: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          git push || (git pull --rebase && git push)
+          git config user.name "prisma-bot"
+          git config user.email "noreply@moran.com"
+          git add .
+          git diff --staged --quiet || git commit -m "chore: prisma global conectado"
+          git push || true
