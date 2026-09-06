@@ -5,7 +5,6 @@ on:
   schedule:
     - cron: '0 */6 * * *'
   workflow_dispatch:
-
 jobs:
   prisma:
     runs-on: ubuntu-latest
@@ -20,7 +19,6 @@ jobs:
         run: |
           set -e
           if [ -n "$GH_TOKEN" ]; then TOKEN="$GH_TOKEN"; else TOKEN="${{ secrets.GITHUB_TOKEN }}"; fi
-          echo "$TOKEN" | gh auth login --with-token
           REPOS=$(gh api user/repos --paginate -q '.[].name')
           echo "# PRISMA GLOBAL REPORT - $(date -u)" > GLOBAL_REPORT.md
           echo "" >> GLOBAL_REPORT.md
