@@ -18,7 +18,6 @@ git push<div align="center">
 </p>
 
 <p>
-  <img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/moranricardo/moranricardo/main/health.json" alt="PRISMA" />
 </p>
 
 </div>
@@ -47,7 +46,6 @@ Go 1.27 • CGO 0 • ARM32 • 2.8M • Native • Diamond
 `curl -sL cli.moranricardo.dev | sh`
 
 ---
-### PRISMA VISOR GLOBAL
 Visor automático de salud - se actualiza cada 6 horas.
 - `health.json` -> estado
 - `REPORT.md` -> reporte
@@ -57,4 +55,3 @@ Visor automático de salud - se actualiza cada 6 horas.
 <p align="center"><b>Low-resource | Native | Secure | Diamond</b></p>
 <p align="center">📍 Tijuana, MX</p>
 
-![PRISMA](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/moranricardo/moranricardo/main/prisma.json?v=2)
