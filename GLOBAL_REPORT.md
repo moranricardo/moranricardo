@@ -1,16 +1,50 @@
-# PRISMA GLOBAL REPORT - Sun Sep  6 07:55:56 UTC 2026
-== {"message":"Resource ==
- Status: {"message":"Not Found","documentation_url":"https://docs.github.com/rest/actions/workflow-runs#list-workflow-runs-for-a-repository","status":"404"}unknown
- CLEAN {"message":"Resource
-== not ==
- Status: {"message":"Not Found","documentation_url":"https://docs.github.com/rest/actions/workflow-runs#list-workflow-runs-for-a-repository","status":"404"}unknown
- CLEAN not
-== accessible ==
- Status: {"message":"Not Found","documentation_url":"https://docs.github.com/rest/actions/workflow-runs#list-workflow-runs-for-a-repository","status":"404"}unknown
- CLEAN accessible
-== by ==
- Status: {"message":"Not Found","documentation_url":"https://docs.github.com/rest/actions/workflow-runs#list-workflow-runs-for-a-repository","status":"404"}unknown
- CLEAN by
-== integration","documentation_url":"https://docs.github.com/rest/repos/repos#list-repositories-for-the-authenticated-user","status":"403"} ==
- Status: unknown
- CLEAN integration","documentation_url":"https://docs.github.com/rest/repos/repos#list-repositories-for-the-authenticated-user","status":"403"}
+# PRISMA GLOBAL REPORT - Sun Sep  6 08:20:42 UTC 2026
+
+### apps-android-wikipedia
+- status: 
+### bot-factory
+- status: success
+### bot-reportes
+- status: success
+### cli
+- status: success
+### curly-enigma
+- status: success
+### didactic-octo-chrome
+- status: success
+- GHOST termux encontrado
+### documentation
+- status: 
+### git
+- status: success
+- GHOST termux encontrado
+### hello-github-actions
+- status: 
+### ia-didactica-core
+- status: success
+### ishandutta2007
+- status: 
+### moranricardo
+- status: 
+- GHOST termux encontrado
+### proyecto-nuevo
+- status: success
+- GHOST termux encontrado
+### puppeteer
+- status: success
+### ra-pulse-orchestrator
+- status: success
+### reusable-workflows
+- status: 
+### scripts
+- status: 
+- GHOST termux encontrado
+### skills
+- status: 
+### skills-copilot-codespaces-vscode
+- status: success
+### skills-introduction-to-github
+- status: success
+### termux-app
+- status: 
+- GHOST termux encontrado
