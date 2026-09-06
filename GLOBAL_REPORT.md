@@ -1,12 +1,50 @@
-# PRISMA GLOBAL REPORT V2.1 - Sun Sep  6 19:42:02 UTC 2026
-| Repositorio | Estado | Acción Recomendada |
-|---|---|---|
-| moranricardo/moranricardo | 🟢 OK P1 | Revisar *.sh/*.py, eliminar hardcoded termux |
-| moranricardo/moranricardo | 🟢 OK P2 | Corregir workflows con failure |
-| termux-app | ⚪ GHOST DOCS | Solo .md, ignorado por filtro V2 |
-| moranricardo/cli | 🟢 PENDIENTE SCAN | Validar en siguiente iteración |
+# PRISMA GLOBAL REPORT - Sun Sep  6 20:00:07 UTC 2026
 
-**Capas:**
-- P1 Seguridad: --include=*.go,*.sh,*.py,*.js,*.ts (ignora .md)
-- P2 Salud: BUILD FAIL / ALL CLEAR
-- P3 Estrategia: tabla + camo bust ?v=2
+### apps-android-wikipedia
+- status: 
+### bot-factory
+- status: success
+### bot-reportes
+- status: success
+### cli
+- status: success
+### curly-enigma
+- status: success
+### didactic-octo-chrome
+- status: success
+- GHOST termux encontrado
+### documentation
+- status: 
+### git
+- status: success
+- GHOST termux encontrado
+### hello-github-actions
+- status: 
+### ia-didactica-core
+- status: success
+### ishandutta2007
+- status: 
+### moranricardo
+- status: 
+- GHOST termux encontrado
+### proyecto-nuevo
+- status: success
+- GHOST termux encontrado
+### puppeteer
+- status: success
+### ra-pulse-orchestrator
+- status: success
+### reusable-workflows
+- status: 
+### scripts
+- status: 
+- GHOST termux encontrado
+### skills
+- status: 
+### skills-copilot-codespaces-vscode
+- status: success
+### skills-introduction-to-github
+- status: success
+### termux-app
+- status: 
+- GHOST termux encontrado
