@@ -56,3 +56,5 @@ Visor automático de salud - se actualiza cada 6 horas.
 ---
 <p align="center"><b>Low-resource | Native | Secure | Diamond</b></p>
 <p align="center">📍 Tijuana, MX</p>
+
+![PRISMA](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/moranricardo/moranricardo/main/prisma.json?v=2)
