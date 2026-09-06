@@ -18,7 +18,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          TOKEN=${GH_TOKEN:-${{ secrets.GITHUB_TOKEN }}}
+          set -x
+          if [ -n "$GH_TOKEN" ]; then TOKEN="$GH_TOKEN"; else TOKEN="${{ secrets.GITHUB_TOKEN }}"; fi
           echo $TOKEN | gh auth login --with-token
           REPOS=$(gh api user/repos --paginate -q '.[].name' | tr '\n' ' ')
           echo "Repos: $REPOS"
