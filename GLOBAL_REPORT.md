@@ -1,4 +1,4 @@
-# PRISMA GLOBAL REPORT V2.1 - Sun Sep 20 15:00:56 UTC 2026
+# PRISMA GLOBAL REPORT V2.1 - Sun Sep 20 19:54:36 UTC 2026
 | Repositorio | Estado | Acción Recomendada |
 |---|---|---|
 | moranricardo/moranricardo | 🟢 OK P1 | Revisar *.sh/*.py, eliminar hardcoded termux |
