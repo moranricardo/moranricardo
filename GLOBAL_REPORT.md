@@ -1,8 +1,8 @@
-# PRISMA GLOBAL REPORT V2.1 - Mon Sep 21 21:19:06 UTC 2026
+# PRISMA GLOBAL REPORT V2.1 - Tue Sep 22 02:11:33 UTC 2026
 | Repositorio | Estado | Acción Recomendada |
 |---|---|---|
 | moranricardo/moranricardo | 🟢 OK P1 | Revisar *.sh/*.py, eliminar hardcoded termux |
-| moranricardo/moranricardo | 🟡 BUILD FAIL | Corregir workflows con failure |
+| moranricardo/moranricardo | 🟢 OK P2 | Corregir workflows con failure |
 | termux-app | ⚪ GHOST DOCS | Solo .md, ignorado por filtro V2 |
 | moranricardo/cli | 🟢 PENDIENTE SCAN | Validar en siguiente iteración |
 
